@@ -150,9 +150,9 @@ $(document).ready(function() {
 
 			var dang = (nearestFood.angle - snake.ang + Math.PI + Math.PI * 2) % (Math.PI * 2) - Math.PI;
 			if (dang > 0) {
-				ctrl.press('RIGHT', 400 * dang);
+				ctrl.press('RIGHT', 500 * dang);
 			} else if (dang < 0) {
-				ctrl.press('LEFT', 400 * Math.abs(dang));
+				ctrl.press('LEFT', 500 * Math.abs(dang));
 			}
 		}
 	}, 40);
