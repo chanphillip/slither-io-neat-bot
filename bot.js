@@ -106,6 +106,11 @@ var controller = function() {
 		return Math.atan2(dy, dx)
 	};
 
+	this.getAngleDiff = function(food) {
+		var ang = this.getAngle(food);
+		return (ang - snake.ang + Math.PI + Math.PI * 2) % (Math.PI * 2) - Math.PI;
+	};
+
 	return this;
 };
 
@@ -131,14 +136,17 @@ $(document).ready(function() {
 			if (food && !food.eaten) {
 				foodSorted.push({
 					distance: ctrl.getDistance(food),
-					angle: ctrl.getAngle(food),
+					angleDiff: ctrl.getAngleDiff(food),
 					obj: food
 				});
 			}
 		});
 
 		foodSorted = foodSorted.sort(function(a, b) {
-			return a.distance - b.distance;
+			var score = function(f) {
+				return f.distance + Math.abs(f.angleDiff) * 10000;
+			};
+			return score(a) - score(b);
 		});
 
 		nearestFood = foodSorted[0] || null;
@@ -147,7 +155,7 @@ $(document).ready(function() {
 		if (nearestFood) {
 			can.drawLine(nearestFood.obj.xx, nearestFood.obj.yy, '#FF0000');
 
-			var dang = (nearestFood.angle - snake.ang + Math.PI + Math.PI * 2) % (Math.PI * 2) - Math.PI;
+			var dang = ctrl.getAngleDiff(nearestFood.obj);
 			if (dang > 0) {
 				ctrl.press('RIGHT', 500 * dang);
 			} else if (dang < 0) {
