@@ -157,18 +157,18 @@ $(document).ready(function() {
 
 			var dang = ctrl.getAngleDiff(nearestFood.obj);
 			if (dang > 0) {
-				ctrl.press('RIGHT', 400 * dang);
+				ctrl.press('RIGHT', 800 * dang);
 			} else if (dang < 0) {
-				ctrl.press('LEFT', 400 * Math.abs(dang));
+				ctrl.press('LEFT', 800 * Math.abs(dang));
 			}
 		}
 	}, 40);
 
 	can.listenTo('//dis', function() {
-		return Math.round(nearestFood.distance);
+		return nearestFood ? Math.round(nearestFood.distance) : null;
 	});
 	can.listenTo('//ang', function() {
-		return Math.round(nearestFood.angleDiff * 180 / Math.PI);
+		return nearestFood ? Math.round(nearestFood.angleDiff * 180 / Math.PI) : null;
 	});
 });
 
