@@ -168,7 +168,7 @@ $(document).ready(function() {
 		return Math.round(nearestFood.distance);
 	});
 	can.listenTo('//ang', function() {
-		return Math.round(nearestFood.angle * 180 / Math.PI);
+		return Math.round(nearestFood.angleDiff * 180 / Math.PI);
 	});
 });
 
