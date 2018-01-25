@@ -120,7 +120,7 @@ $(document).ready(function() {
 	can.listenTo('snake.xx');
 	can.listenTo('snake.yy');
 
-	var nearestFood = {};
+	var nearestFood;
 
 	ctrl = new controller();
 	setInterval(function() {
@@ -131,6 +131,7 @@ $(document).ready(function() {
 			if (food && !food.eaten) {
 				foodSorted.push({
 					distance: ctrl.getDistance(food),
+					angle: ctrl.getAngle(food),
 					obj: food
 				});
 			}
@@ -140,12 +141,10 @@ $(document).ready(function() {
 			return a.distance - b.distance;
 		});
 
-		nearestFood.obj = foodSorted[0] ? foodSorted[0].obj : null;
-		nearestFood.distance = foodSorted[0] ? foodSorted[0].distance : null;
-		nearestFood.angle = foodSorted[0] ? ctrl.getAngle(foodSorted[0].obj) : null;
+		nearestFood = foodSorted[0] || null;
 
 		can.clearLines();
-		if (nearestFood.obj) {
+		if (nearestFood) {
 			can.drawLine(nearestFood.obj.xx, nearestFood.obj.yy, '#FF0000');
 
 			var dang = (nearestFood.angle - snake.ang + Math.PI + Math.PI * 2) % (Math.PI * 2) - Math.PI;
