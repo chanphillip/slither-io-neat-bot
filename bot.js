@@ -68,7 +68,7 @@ var canvas = function() {
 		ctx.clearRect(0, 0, $mask[0].width, $mask[0].height);
 	}
 
-	this.drawLine = function(xx, yy, color) {
+	this.drawLine = function(xx, yy, color, width) {
 		var x1 = $mask[0].width / 2;
 		var y1 = $mask[0].height / 2;
 		var x2 = x1 + (xx - snake.xx) * sgsc;
@@ -76,6 +76,7 @@ var canvas = function() {
 
 		ctx.beginPath();
 		ctx.strokeStyle = color;
+		ctx.lineWidth = width || 1;
 		ctx.moveTo(x1, y1);
 		ctx.lineTo(x2, y2);
 		ctx.stroke();
@@ -111,19 +112,89 @@ var controller = function() {
 		}, delay);
 	};
 
-	this.getDistance = function(food) {
-		return Math.abs(Math.pow(food.xx - snake.xx, 2) + Math.pow(food.yy - snake.yy, 2));
+	this.getDistance = function(obj) {
+		return Math.abs(Math.pow(obj.xx - snake.xx, 2) + Math.pow(obj.yy - snake.yy, 2));
 	};
 
-	this.getAngle = function(food) {
-		var dy = food.yy - snake.yy;
-		var dx = food.xx - snake.xx;
+	this.getAngle = function(obj) {
+		var dy = obj.yy - snake.yy;
+		var dx = obj.xx - snake.xx;
 		return Math.atan2(dy, dx)
 	};
 
-	this.getAngleDiff = function(food) {
-		var ang = this.getAngle(food);
-		return (ang - snake.ang + Math.PI + Math.PI * 2) % (Math.PI * 2) - Math.PI;
+	var angleDiff = function(ang1, ang2) {
+		return (ang2 - ang1 + Math.PI + Math.PI * 2) % (Math.PI * 2) - Math.PI;
+	};
+
+	this.getAngleDiff = function(obj) {
+		var ang = this.getAngle(obj);
+		return angleDiff(snake.ang, ang);
+	};
+
+	this.processSurrounding = function() {
+		var self = this;
+
+		var DIVISION_COUNT = 36;
+		var DIVISION_ANGLE = Math.PI * 2 / DIVISION_COUNT;
+
+		var nearestObjs = [];
+
+		for (var z = 0; z < DIVISION_COUNT; ++z) {
+
+			var pointingAngle = z * DIVISION_ANGLE;
+
+			if (pointingAngle > Math.PI / 2 && pointingAngle < Math.PI * 3 / 2) continue;
+
+			var pointingObjs = [];
+
+			// checking other snakes
+			snakes.forEach(function(snakeTmp) {
+				if (snakeTmp == snake) return;		// self
+
+				snakeTmp.pts.forEach(function(body, i) {
+					if (body.dying) return;
+
+					if (Math.abs(angleDiff(self.getAngleDiff(body), pointingAngle)) < DIVISION_ANGLE / 2) {
+						if (i == snakeTmp.pts.length - 1) {
+							pointingObjs.push({
+								type: 'SNAKE_HEAD',
+								obj: body
+							});
+						} else {
+							pointingObjs.push({
+								type: 'SNAKE_BODY',
+								obj: body
+							});
+						}
+					}
+				});
+			});
+
+			// checking food
+			foods.forEach(function(food) {
+				if (food && !food.eaten && self.getDistance(food) < 100000) {
+
+					if (Math.abs(angleDiff(self.getAngleDiff(food), pointingAngle)) < DIVISION_ANGLE / 2) {
+						pointingObjs.push({
+							type: 'FOOD',
+							obj: food
+						});
+					}
+				}
+			});
+
+			// sort by distance
+			if (pointingObjs.length) {
+				pointingObjs.sort(function(a, b) {
+					return self.getDistance(a.obj) - self.getDistance(b.obj);
+				});
+
+				var nearestObj = pointingObjs[0];
+				nearestObjs.push(nearestObj);
+			}
+		}
+
+		return nearestObjs;
 	};
 
 	return this;
@@ -144,39 +215,43 @@ $(document).ready(function() {
 
 	ctrl = new controller();
 	setInterval(function() {
-		// dump logic here..
-		// just tracing the closest food..
-		var foodSorted = [];
-		foods.forEach(function(food) {
-			if (food && !food.eaten) {
-				foodSorted.push({
-					distance: ctrl.getDistance(food),
-					angleDiff: ctrl.getAngleDiff(food),
-					obj: food
-				});
-			}
-		});
 
-		foodSorted = foodSorted.sort(function(a, b) {
-			var score = function(f) {
-				return f.distance + Math.abs(f.angleDiff) * 10000;
-			};
-			return score(a) - score(b);
-		});
-
-		nearestFood = foodSorted[0] || null;
+		var nearestObjs = ctrl.processSurrounding();
 
 		can.clearLines();
-		if (nearestFood) {
-			can.drawLine(nearestFood.obj.xx, nearestFood.obj.yy, '#FF0000');
+		nearestObjs.forEach(function(nearestObj) {
+			var color;
+			var width;
+			switch (nearestObj.type) {
+				case 'FOOD':
+					color = 'rgba(0, 255, 0, 1)';
+					width = 1;
+					break;
+				case 'SNAKE_BODY':
+					color = 'rgba(255, 0, 0, .5)';
+					width = nearestObj.obj.tl;
+					break;
+				case 'SNAKE_HEAD':
+					color = 'rgba(80, 80, 255, .5)';
+					width = 2;
+					break;
+			};
+			can.drawLine(nearestObj.obj.xx, nearestObj.obj.yy, color, width);
+		});
 
-			var dang = ctrl.getAngleDiff(nearestFood.obj);
-			if (dang > 0) {
-				ctrl.press('RIGHT', 800 * dang);
-			} else if (dang < 0) {
-				ctrl.press('LEFT', 800 * Math.abs(dang));
-			}
-		}
+		// nearestFood = foodSorted[0] || null;
+
+		// can.clearLines();
+		// if (nearestFood) {
+		// 	can.drawLine(nearestFood.obj.xx, nearestFood.obj.yy, '#FF0000');
+
+		// 	var dang = ctrl.getAngleDiff(nearestFood.obj);
+		// 	if (dang > 0) {
+		// 		ctrl.press('RIGHT', 800 * dang);
+		// 	} else if (dang < 0) {
+		// 		ctrl.press('LEFT', 800 * Math.abs(dang));
+		// 	}
+		// }
 	}, 40);
 
 	can.listenTo('//dis', function() {
