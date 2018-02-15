@@ -1,4 +1,8 @@
 
+var DIVISION_ANGLE = Math.PI / 2;
+var DIVISION_COUNT = 9;
+var DIVISION_SLICE_ANGLE = DIVISION_ANGLE * 2 / (DIVISION_COUNT - 1);
+
 var canvas = function() {
 	var self = this;
 
@@ -62,7 +66,7 @@ var canvas = function() {
 				self.onGameEnded(score);
 			}
 		}
-	}, 200);
+	}, 100);
 
 	this.clearLines = function() {
 		ctx.clearRect(0, 0, $mask[0].width, $mask[0].height);
@@ -113,7 +117,7 @@ var controller = function() {
 	};
 
 	this.getDistance = function(obj) {
-		return Math.abs(Math.pow(obj.xx - snake.xx, 2) + Math.pow(obj.yy - snake.yy, 2));
+		return Math.sqrt(Math.pow(obj.xx - snake.xx, 2) + Math.pow(obj.yy - snake.yy, 2));
 	};
 
 	this.getAngle = function(obj) {
@@ -134,18 +138,37 @@ var controller = function() {
 	this.processSurrounding = function() {
 		var self = this;
 
-		var DIVISION_COUNT = 36;
-		var DIVISION_ANGLE = Math.PI * 2 / DIVISION_COUNT;
-
-		var nearestObjs = [];
+		var nearestObjs = {
+			food: [],
+			enermy: []
+		};
 
 		for (var z = 0; z < DIVISION_COUNT; ++z) {
 
-			var pointingAngle = z * DIVISION_ANGLE;
+			var pointingAngle = - DIVISION_ANGLE + z * DIVISION_SLICE_ANGLE;
 
-			if (pointingAngle > Math.PI / 2 && pointingAngle < Math.PI * 3 / 2) continue;
+			// things at this slice
+			var pointingObjs = {
+				food: [],
+				enermy: []
+			};
 
-			var pointingObjs = [];
+			var findNearestObj = function(objs) {
+				// sort by distance
+				var nearestObj = null;
+				if (objs.length) {
+					objs.sort(function(a, b) {
+						return a.distance - b.distance;
+					});
+					nearestObj = objs[0];
+				}
+				return {
+					angle: pointingAngle,
+					distance: nearestObj ? nearestObj.distance : 1000,
+					obj: nearestObj ? nearestObj.obj : null,
+					type: nearestObj ? nearestObj.type : null,
+				};
+			};
 
 			// checking other snakes
 			snakes.forEach(function(snakeTmp) {
@@ -154,44 +177,31 @@ var controller = function() {
 				snakeTmp.pts.forEach(function(body, i) {
 					if (body.dying) return;
 
-					if (Math.abs(angleDiff(self.getAngleDiff(body), pointingAngle)) < DIVISION_ANGLE / 2) {
-						if (i == snakeTmp.pts.length - 1) {
-							pointingObjs.push({
-								type: 'SNAKE_HEAD',
-								obj: body
-							});
-						} else {
-							pointingObjs.push({
-								type: 'SNAKE_BODY',
-								obj: body
-							});
-						}
+					if (Math.abs(angleDiff(self.getAngleDiff(body), pointingAngle)) < DIVISION_SLICE_ANGLE / 2) {
+						pointingObjs.enermy.push({
+							type: (i == snakeTmp.pts.length - 1) ? 'SNAKE_HEAD' : 'SNAKE_BODY',
+							obj: body,
+							distance: self.getDistance(body)
+						});
 					}
 				});
 			});
+			nearestObjs.enermy.push(findNearestObj(pointingObjs.enermy));
 
 			// checking food
 			foods.forEach(function(food) {
-				if (food && !food.eaten && self.getDistance(food) < 100000) {
+				if (food && !food.eaten && self.getDistance(food) < 1000) {
 
-					if (Math.abs(angleDiff(self.getAngleDiff(food), pointingAngle)) < DIVISION_ANGLE / 2) {
-						pointingObjs.push({
+					if (Math.abs(angleDiff(self.getAngleDiff(food), pointingAngle)) < DIVISION_SLICE_ANGLE / 2) {
+						pointingObjs.food.push({
 							type: 'FOOD',
-							obj: food
+							obj: food,
+							distance: self.getDistance(food)
 						});
 					}
 				}
 			});
-
-			// sort by distance
-			if (pointingObjs.length) {
-				pointingObjs.sort(function(a, b) {
-					return self.getDistance(a.obj) - self.getDistance(b.obj);
-				});
-
-				var nearestObj = pointingObjs[0];
-				nearestObjs.push(nearestObj);
-			}
+			nearestObjs.food.push(findNearestObj(pointingObjs.food));
 		}
 
 		return nearestObjs;
@@ -204,6 +214,10 @@ $(document).ready(function() {
 	console.log('Slither IO bot is loaded!');
 
 	can = new canvas();
+
+	can.onGameEnded = function(score) {
+		console.log('Gameover:', score);
+	};
 
 	// some random variables to watch
 	can.listenTo('snake.ang', v => Math.round(v * 180 / Math.PI));
@@ -219,32 +233,62 @@ $(document).ready(function() {
 		var nearestObjs = ctrl.processSurrounding();
 
 		can.clearLines();
-		nearestObjs.forEach(function(nearestObj) {
-			var color;
-			var width;
-			switch (nearestObj.type) {
-				case 'FOOD':
-					color = 'rgba(0, 255, 0, 1)';
-					width = 1;
-					break;
-				case 'SNAKE_BODY':
-					color = 'rgba(255, 0, 0, .5)';
-					width = nearestObj.obj.tl;
-					break;
-				case 'SNAKE_HEAD':
-					color = 'rgba(80, 80, 255, .5)';
-					width = 2;
-					break;
-			};
-			can.drawLine(nearestObj.obj.xx, nearestObj.obj.yy, color, width);
+
+		if (!snake) {
+			return;
+		}
+
+		// food
+		nearestObjs.food.forEach(function(nearestObj) {
+			var pa = nearestObj.angle + snake.ang - DIVISION_SLICE_ANGLE / 20;
+			var px = Math.cos(pa) * nearestObj.distance + snake.xx;
+			var py = Math.sin(pa) * nearestObj.distance + snake.yy;
+			can.drawLine(px, py, 'rgba(0, 255, 0, .6)', 2);
 		});
 
-		// nearestFood = foodSorted[0] || null;
+		// enermy
+		nearestObjs.enermy.forEach(function(nearestObj) {
+			var color = 'rgba(255, 0, 0, .5)';
+			var width = 2;
+			if (nearestObj.obj) {
+				switch (nearestObj.type) {
+					case 'SNAKE_BODY':
+						color = 'rgba(255, 0, 0, .5)';
+						break;
+					case 'SNAKE_HEAD':
+						color = 'rgba(80, 80, 255, .5)';
+						width = 2;
+						break;
+				};
+			}
+			var pa = nearestObj.angle + snake.ang + DIVISION_SLICE_ANGLE / 20;
+			var px = Math.cos(pa) * nearestObj.distance + snake.xx;
+			var py = Math.sin(pa) * nearestObj.distance + snake.yy;
+			can.drawLine(px, py, color, width);
+		});
 
-		// can.clearLines();
-		// if (nearestFood) {
-		// 	can.drawLine(nearestFood.obj.xx, nearestFood.obj.yy, '#FF0000');
+		// dummy logics here..
+		// var frontScore = 0;
+		// nearestObjs.forEach(function(nearestObj) {
+		// 	if (nearestObj.type == 'FOOD') {
+		// 		++frontScore;
+		// 	} else {
+		// 		--frontScore;
+		// 	}
+		// });
 
+		// if (frontScore < 0) {
+		// 	ctrl.press('RIGHT', 800);
+		// } else if (nearestObjs.length) {
+		// 	var frontObjs = nearestObjs.slice().filter(function(frontObj) {
+		// 		return frontObj.type == 'FOOD';
+		// 	});
+		// 	frontObjs.sort(function(a, b) {
+		// 		return Math.abs(ctrl.getAngleDiff(a.obj)) - Math.abs(ctrl.getAngleDiff(b.obj));
+		// 	});
+
+		// 	var nearestFood = frontObjs[0];
+		// 	can.drawLine(nearestFood.obj.xx, nearestFood.obj.yy, 'rgba(255, 255, 255, .5)', 3);
 		// 	var dang = ctrl.getAngleDiff(nearestFood.obj);
 		// 	if (dang > 0) {
 		// 		ctrl.press('RIGHT', 800 * dang);
@@ -252,6 +296,7 @@ $(document).ready(function() {
 		// 		ctrl.press('LEFT', 800 * Math.abs(dang));
 		// 	}
 		// }
+
 	}, 40);
 
 	can.listenTo('//dis', function() {
