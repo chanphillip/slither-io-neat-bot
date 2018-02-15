@@ -1,5 +1,7 @@
 
 var canvas = function() {
+	var self = this;
+
 	this.ctrl = new controller();
 
 	// canvas for displaying graphics
@@ -46,8 +48,21 @@ var canvas = function() {
 	};
 
 	this.getScore = function() {
-		return parseInt($('div.nsi:contains("Your length") > span:first').text().match(/\d+$/)[0]);
+		var $elem = $('div.nsi:contains("Your length") > span:first');
+		if (!$elem.length) {
+			return null;
+		}
+		return parseInt($elem.text().match(/\d+$/)[0]);
 	};
+
+	var checkGameState = setInterval(function() {
+		if (!snake) {
+			var score = self.getScore();
+			if (score && self.onGameEnded) {
+				self.onGameEnded(score);
+			}
+		}
+	}, 200);
 
 	this.clearLines = function() {
 		ctx.clearRect(0, 0, $mask[0].width, $mask[0].height);
