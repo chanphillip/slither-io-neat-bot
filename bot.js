@@ -3,6 +3,15 @@ var DIVISION_ANGLE = Math.PI / 2;
 var DIVISION_COUNT = 9;
 var DIVISION_SLICE_ANGLE = DIVISION_ANGLE * 2 / (DIVISION_COUNT - 1);
 
+var NETWORK_INPUT_COUNT = DIVISION_COUNT * 2;
+var NETWORK_OUTPUT_COUNT = 3;
+var NETWORK_GENOME_AMOUNT = 10;
+var NETWORK_MUTATION_RATE = .3;
+var NETWORK_ELITISM = Math.round(.1 * NETWORK_GENOME_AMOUNT);
+
+var NETWORK_GENOME_TIMEOUT = 10000;		// 60 seconds for each genome
+var NETWORK_GAMEOVER_PENALTY = 100;
+
 var canvas = function() {
 	var self = this;
 
@@ -51,23 +60,6 @@ var canvas = function() {
 		$elem.data('varItv', itv);
 	};
 
-	this.getScore = function() {
-		var $elem = $('div.nsi:contains("Your length") > span:first');
-		if (!$elem.length) {
-			return null;
-		}
-		return parseInt($elem.text().match(/\d+$/)[0]);
-	};
-
-	var checkGameState = setInterval(function() {
-		if (!snake) {
-			var score = self.getScore();
-			if (score && self.onGameEnded) {
-				self.onGameEnded(score);
-			}
-		}
-	}, 100);
-
 	this.clearLines = function() {
 		ctx.clearRect(0, 0, $mask[0].width, $mask[0].height);
 	}
@@ -90,6 +82,160 @@ var canvas = function() {
 };
 
 var controller = function() {
+	var self = this;
+
+	this.getScore = function() {
+		var $elem = $('div.nsi:contains("Your length") > span:first');
+		if (!$elem.length) {
+			return null;
+		}
+		return parseInt($elem.text().match(/\d+$/)[0]);
+	};
+
+	var gameState = 'ENDED';
+	var checkGameState = setInterval(function() {
+		if (gameState == 'PLAYING' && !snake) {
+			gameState = 'ENDED';
+			self.endGenome(true);
+		} else if (gameState == 'ENDED' && snake) {
+			gameState = 'PLAYING';
+		}
+	}, 100);
+
+	var iteration = 0;
+	var highestScore = 0;
+
+	var currGenomeIndex = 0;
+
+	this.startGeneration = function() {
+		console.log('Start Generation '+this.network.generation+'...');
+
+		highestScore = 0;
+
+		// for (var genome in neat.population) {
+		// 	genome = neat.population[genome];
+		// 	new Player(genome);
+		// }
+
+		// walker.reset();
+
+		this.startGenome();
+	}
+
+	var genomeTimeout = null;
+
+	var startingScore;
+	this.startGenome = function() {
+		var itvTmp = setInterval(function() {
+			if (gameState != 'PLAYING') return;
+			clearInterval(itvTmp);
+
+			startingScore = self.getScore();
+			console.log('  Start Genome '+currGenomeIndex+'...');
+
+			genomeTimeout = setTimeout(function() {
+				self.endGenome();
+			}, NETWORK_GENOME_TIMEOUT);
+		}, 100);
+	};
+
+	this.endGenome = function(hasPenalty) {
+
+		if (!genomeTimeout) {
+			return;
+		}
+
+		clearTimeout(genomeTimeout);
+		genomeTimeout = null;
+
+		var score = (this.getScore() || 0) - startingScore;
+		if (hasPenalty) {
+			score -= NETWORK_GAMEOVER_PENALTY;
+		}
+		console.log('  Ended Genome '+currGenomeIndex+':', score);
+
+		this.network.population[currGenomeIndex].score = score;
+
+		++currGenomeIndex;
+		if (currGenomeIndex >= NETWORK_GENOME_AMOUNT) {
+			currGenomeIndex = 0;
+
+			this.endGeneration();
+		} else {
+			this.startGenome();
+		}
+	};
+
+	/** End the evaluation of the current generation */
+	this.endGeneration = function() {
+		console.log('End Generation '+this.network.generation+':', Math.round(this.network.getAverage()));
+		console.log('Fittest score:', Math.round(this.network.getFittest().score));
+		console.log('-------------');
+
+		// // Networks shouldn't get too big
+		// for(var genome in this.network.population){
+		// 	genome = this.network.population[genome];
+		// 	genome.score -= genome.nodes.length * SCORE_RADIUS / 10;
+		// }
+
+		// Sort the population by score
+		this.network.sort();
+
+		// Draw the best genome
+		// drawGraph(neat.population[0].graph($('.best').width()/2, $('.best').height()/2), '.best');
+
+		// Init new pop
+		var newPopulation = [];
+
+		// Elitism
+		for (var i = 0; i < this.network.elitism; i++) {
+			newPopulation.push(this.network.population[i]);
+		}
+
+		// Breed the next individuals
+		for (var i = 0; i < this.network.popsize - this.network.elitism; i++) {
+			newPopulation.push(this.network.getOffspring());
+		}
+
+		// Replace the old population with the new population
+		this.network.population = newPopulation;
+		this.network.mutate();
+
+		this.network.generation++;
+		this.startGeneration();
+	}
+
+	this.network = new neataptic.Neat(
+		NETWORK_INPUT_COUNT, NETWORK_OUTPUT_COUNT,
+		null,
+		{
+			mutation: [
+				neataptic.methods.mutation.ADD_NODE,
+				neataptic.methods.mutation.SUB_NODE,
+				neataptic.methods.mutation.ADD_CONN,
+				neataptic.methods.mutation.SUB_CONN,
+				neataptic.methods.mutation.MOD_WEIGHT,
+				neataptic.methods.mutation.MOD_BIAS,
+				neataptic.methods.mutation.MOD_ACTIVATION,
+				neataptic.methods.mutation.ADD_GATE,
+				neataptic.methods.mutation.SUB_GATE,
+				neataptic.methods.mutation.ADD_SELF_CONN,
+				neataptic.methods.mutation.SUB_SELF_CONN,
+				neataptic.methods.mutation.ADD_BACK_CONN,
+				neataptic.methods.mutation.SUB_BACK_CONN
+			],
+			popsize: NETWORK_GENOME_AMOUNT,
+			mutationRate: NETWORK_MUTATION_RATE,
+			elitism: NETWORK_ELITISM
+		}
+	);
+	this.network.mutate();
+
+	this.runNeat = function(inputs) {
+		return this.network.population[currGenomeIndex].activate(inputs);
+	};
+
+	// handle input for the game
 	var sendEvent = function(keyCode, event) {
 		var e = new Event(event);
 		e.keyCode = keyCode;
@@ -102,7 +248,7 @@ var controller = function() {
 		document.dispatchEvent(e);
 	};
 
-	this.press = function(key, delay) {
+	this.pressFor = function(key, delay) {
 		var keyCode;
 		switch (key) {
 			case 'LEFT': keyCode = 37; break;
@@ -114,6 +260,35 @@ var controller = function() {
 		setTimeout(function() {
 			sendEvent(keyCode, 'keyup');
 		}, delay);
+	};
+
+	var pressed = {};
+	this.press = function(key) {
+		if (!pressed[key]) {
+			pressed[key] = true;
+
+			var keyCode;
+			switch (key) {
+				case 'LEFT': keyCode = 37; break;
+				case 'RIGHT': keyCode = 39; break;
+				case 'SPACE': keyCode = 32; break;
+			}
+			sendEvent(keyCode, 'keydown');
+		}
+	};
+
+	this.release = function(key) {
+		if (pressed[key]) {
+			pressed[key] = false;
+
+			var keyCode;
+			switch (key) {
+				case 'LEFT': keyCode = 37; break;
+				case 'RIGHT': keyCode = 39; break;
+				case 'SPACE': keyCode = 32; break;
+			}
+			sendEvent(keyCode, 'keyup');
+		}
 	};
 
 	this.getDistance = function(obj) {
@@ -136,7 +311,6 @@ var controller = function() {
 	};
 
 	this.processSurrounding = function() {
-		var self = this;
 
 		var nearestObjs = {
 			food: [],
@@ -215,10 +389,6 @@ $(document).ready(function() {
 
 	can = new canvas();
 
-	can.onGameEnded = function(score) {
-		console.log('Gameover:', score);
-	};
-
 	// some random variables to watch
 	can.listenTo('snake.ang', v => Math.round(v * 180 / Math.PI));
 	can.listenTo('foods.length');
@@ -228,6 +398,9 @@ $(document).ready(function() {
 	var nearestFood;
 
 	ctrl = new controller();
+
+	ctrl.startGeneration();
+
 	setInterval(function() {
 
 		var nearestObjs = ctrl.processSurrounding();
@@ -267,35 +440,32 @@ $(document).ready(function() {
 			can.drawLine(px, py, color, width);
 		});
 
-		// dummy logics here..
-		// var frontScore = 0;
-		// nearestObjs.forEach(function(nearestObj) {
-		// 	if (nearestObj.type == 'FOOD') {
-		// 		++frontScore;
-		// 	} else {
-		// 		--frontScore;
-		// 	}
-		// });
+		// run neat
+		var networkInputs = nearestObjs.food.map(function(obj) {
+			return obj.distance;
+		}).concat(nearestObjs.enermy.map(function(obj) {
+			return obj.distance;
+		}));
 
-		// if (frontScore < 0) {
-		// 	ctrl.press('RIGHT', 800);
-		// } else if (nearestObjs.length) {
-		// 	var frontObjs = nearestObjs.slice().filter(function(frontObj) {
-		// 		return frontObj.type == 'FOOD';
-		// 	});
-		// 	frontObjs.sort(function(a, b) {
-		// 		return Math.abs(ctrl.getAngleDiff(a.obj)) - Math.abs(ctrl.getAngleDiff(b.obj));
-		// 	});
+		var networkOutputs = ctrl.runNeat(networkInputs);
 
-		// 	var nearestFood = frontObjs[0];
-		// 	can.drawLine(nearestFood.obj.xx, nearestFood.obj.yy, 'rgba(255, 255, 255, .5)', 3);
-		// 	var dang = ctrl.getAngleDiff(nearestFood.obj);
-		// 	if (dang > 0) {
-		// 		ctrl.press('RIGHT', 800 * dang);
-		// 	} else if (dang < 0) {
-		// 		ctrl.press('LEFT', 800 * Math.abs(dang));
-		// 	}
-		// }
+		if (networkOutputs[0] > .5) {
+			ctrl.press('LEFT');
+		} else {
+			ctrl.release('LEFT');
+		}
+
+		if (networkOutputs[1] > .5) {
+			ctrl.press('RIGHT');
+		} else {
+			ctrl.release('RIGHT');
+		}
+
+		if (networkOutputs[2] > .5) {
+			ctrl.press('SPACE');
+		} else {
+			ctrl.release('SPACE');
+		}
 
 	}, 40);
 
@@ -307,20 +477,7 @@ $(document).ready(function() {
 	});
 });
 
-/*var goRand = function() {
-	var r = Math.random();
-	var d = Math.random() * 1000 + 100;
-	if (r < .3) {
-		c.press('LEFT', d);
-	} else if (r >= .7) {
-		c.press('RIGHT', d);
-	} else if (r >= .5) {
-		c.press('SPACE', d);
-	}
-	setTimeout(goRand, d);
-};*/
-
 // auto restart
 setInterval(function() {
 	$('#playh .nsi').click();
-}, 2000);
+}, 1000);

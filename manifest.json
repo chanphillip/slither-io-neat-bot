@@ -10,5 +10,5 @@
       "run_at": "document_end"
     }
   ],
-  "web_accessible_resources" : ["jquery.js", "bot.js"]
+  "web_accessible_resources" : ["jquery.js", "neataptic.js", "bot.js"]
 }
