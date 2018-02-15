@@ -401,6 +401,9 @@ $(document).ready(function() {
 
 	ctrl.startGeneration();
 
+	var lastInputs = [];
+	var lastOutputs = [];
+
 	setInterval(function() {
 
 		var nearestObjs = ctrl.processSurrounding();
@@ -442,20 +445,20 @@ $(document).ready(function() {
 
 		// run neat
 		var networkInputs = nearestObjs.food.map(function(obj) {
-			return obj.distance;
+			return obj.distance / 1000;
 		}).concat(nearestObjs.enermy.map(function(obj) {
-			return obj.distance;
+			return obj.distance / 1000;
 		}));
 
 		var networkOutputs = ctrl.runNeat(networkInputs);
 
-		if (networkOutputs[0] > .5) {
+		if (networkOutputs[0] > .5 && networkOutputs[1] < .5) {
 			ctrl.press('LEFT');
 		} else {
 			ctrl.release('LEFT');
 		}
 
-		if (networkOutputs[1] > .5) {
+		if (networkOutputs[1] > .5 && networkOutputs[0] < .5) {
 			ctrl.press('RIGHT');
 		} else {
 			ctrl.release('RIGHT');
@@ -467,13 +470,16 @@ $(document).ready(function() {
 			ctrl.release('SPACE');
 		}
 
+		lastInputs = networkInputs.slice();
+		lastOutputs = networkOutputs.slice();
+
 	}, 40);
 
-	can.listenTo('//dis', function() {
-		return nearestFood ? Math.round(nearestFood.distance) : null;
+	can.listenTo('//inputs', function() {
+		return lastInputs.join(', ');
 	});
-	can.listenTo('//ang', function() {
-		return nearestFood ? Math.round(nearestFood.angleDiff * 180 / Math.PI) : null;
+	can.listenTo('//outputs', function() {
+		return lastOutputs.join(', ');
 	});
 });
 
