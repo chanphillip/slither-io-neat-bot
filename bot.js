@@ -182,11 +182,10 @@ var controller = function() {
 		console.log('End Generation '+this.network.generation+':', Math.round(this.network.getAverage()));
 		console.log('Fittest score:', Math.round(this.network.getFittest().score));
 
-		// // Networks shouldn't get too big
-		// for(var genome in this.network.population){
-		// 	genome = this.network.population[genome];
-		// 	genome.score -= genome.nodes.length * SCORE_RADIUS / 10;
-		// }
+		// Networks shouldn't get too big
+		this.network.population.forEach(function(genome) {
+			genome.score -= genome.nodes.length * 10;
+		}
 
 		// Sort the population by score
 		this.network.sort();
