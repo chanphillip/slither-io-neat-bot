@@ -162,7 +162,7 @@ var controller = function() {
 		if (hasPenalty) {
 			score -= NETWORK_GAMEOVER_PENALTY;
 		}
-		var scoreBonus = score * this.getScore() / 100;
+		var scoreBonus = score * Math.sqrt(this.getScore());
 		console.log('  Ended Genome '+currGenomeIndex+':', score, scoreBonus);
 
 		this.network.population[currGenomeIndex].score = scoreBonus;
