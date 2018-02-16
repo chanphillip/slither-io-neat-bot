@@ -15,8 +15,6 @@ var NETWORK_GAMEOVER_PENALTY = 100;
 var canvas = function() {
 	var self = this;
 
-	this.ctrl = new controller();
-
 	// canvas for displaying graphics
 	var $mask = $('<canvas>').css({
 		position: 'absolute',
