@@ -185,7 +185,7 @@ var controller = function() {
 		// Networks shouldn't get too big
 		this.network.population.forEach(function(genome) {
 			genome.score -= genome.nodes.length * 10;
-		}
+		});
 
 		// Sort the population by score
 		this.network.sort();
