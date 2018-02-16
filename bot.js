@@ -366,7 +366,7 @@ var controller = function() {
 				if (snakeTmp == snake) return;		// self
 
 				snakeTmp.pts.forEach(function(body, i) {
-					if (body.dying) return;
+					if (body.dying || self.getDistance(body) > 1000) return;
 
 					if (Math.abs(angleDiff(self.getAngleDiff(body), pointingAngle)) < DIVISION_SLICE_ANGLE / 2) {
 						pointingObjs.enermy.push({
@@ -381,15 +381,14 @@ var controller = function() {
 
 			// checking food
 			foods.forEach(function(food) {
-				if (food && !food.eaten && self.getDistance(food) < 1000) {
+				if (!food || food.eaten || self.getDistance(food) > 1000) return;
 
-					if (Math.abs(angleDiff(self.getAngleDiff(food), pointingAngle)) < DIVISION_SLICE_ANGLE / 2) {
-						pointingObjs.food.push({
-							type: 'FOOD',
-							obj: food,
-							distance: self.getDistance(food)
-						});
-					}
+				if (Math.abs(angleDiff(self.getAngleDiff(food), pointingAngle)) < DIVISION_SLICE_ANGLE / 2) {
+					pointingObjs.food.push({
+						type: 'FOOD',
+						obj: food,
+						distance: self.getDistance(food)
+					});
 				}
 			});
 			nearestObjs.food.push(findNearestObj(pointingObjs.food));
