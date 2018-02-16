@@ -52,7 +52,7 @@ var canvas = function() {
 		zIndex: 10000000,
 		width: '500px',
 		height: '350px',
-		background: 'rgba(100, 100, 100, .75)',
+		background: 'rgba(100, 100, 100, .25)',
 	}).html('<svg class="neat-best" style="width: 100%; height: 100%"></svg>').appendTo('body');
 
 	// watching variables
