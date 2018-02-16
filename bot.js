@@ -1,6 +1,6 @@
 
 var DIVISION_ANGLE = Math.PI / 2 * 1.5;
-var DIVISION_COUNT = 13;
+var DIVISION_COUNT = 7;
 var DIVISION_SLICE_ANGLE = DIVISION_ANGLE * 2 / (DIVISION_COUNT - 1);
 
 var NETWORK_INPUT_COUNT = DIVISION_COUNT * 2;
@@ -475,19 +475,19 @@ $(document).ready(function() {
 
 		var networkOutputs = ctrl.runNeat(networkInputs);
 
-		if (networkOutputs[0] > 0 && networkOutputs[1] < 0) {
+		if (networkOutputs[0] > .5 && networkOutputs[1] < .5) {
 			ctrl.press('LEFT');
 		} else {
 			ctrl.release('LEFT');
 		}
 
-		if (networkOutputs[1] > 0 && networkOutputs[0] < 0) {
+		if (networkOutputs[1] > .5 && networkOutputs[0] < .5) {
 			ctrl.press('RIGHT');
 		} else {
 			ctrl.release('RIGHT');
 		}
 
-		if (networkOutputs[2] > 0 && ctrl.getScore() >= 15) {
+		if (networkOutputs[2] > .5 && ctrl.getScore() >= 15) {
 			ctrl.press('SPACE');
 		} else {
 			ctrl.release('SPACE');
