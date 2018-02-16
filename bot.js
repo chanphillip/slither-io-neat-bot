@@ -99,6 +99,10 @@ var controller = function() {
 			self.endGenome(true);
 		} else if (gameState == 'ENDED' && snake) {
 			gameState = 'PLAYING';
+
+			self.release('LEFT');
+			self.release('RIGHT');
+			self.release('SPACE');
 		}
 	}, 100);
 
@@ -108,16 +112,10 @@ var controller = function() {
 	var currGenomeIndex = 0;
 
 	this.startGeneration = function() {
+		console.log('-------------');
 		console.log('Start Generation '+this.network.generation+'...');
 
 		highestScore = 0;
-
-		// for (var genome in neat.population) {
-		// 	genome = neat.population[genome];
-		// 	new Player(genome);
-		// }
-
-		// walker.reset();
 
 		this.startGenome();
 	}
@@ -170,7 +168,6 @@ var controller = function() {
 	this.endGeneration = function() {
 		console.log('End Generation '+this.network.generation+':', Math.round(this.network.getAverage()));
 		console.log('Fittest score:', Math.round(this.network.getFittest().score));
-		console.log('-------------');
 
 		// // Networks shouldn't get too big
 		// for(var genome in this.network.population){
@@ -216,7 +213,7 @@ var controller = function() {
 				neataptic.methods.mutation.SUB_CONN,
 				neataptic.methods.mutation.MOD_WEIGHT,
 				neataptic.methods.mutation.MOD_BIAS,
-				neataptic.methods.mutation.MOD_ACTIVATION,
+				// neataptic.methods.mutation.MOD_ACTIVATION,
 				neataptic.methods.mutation.ADD_GATE,
 				neataptic.methods.mutation.SUB_GATE,
 				neataptic.methods.mutation.ADD_SELF_CONN,
@@ -229,7 +226,26 @@ var controller = function() {
 			elitism: NETWORK_ELITISM
 		}
 	);
-	this.network.mutate();
+
+	this.network.population.forEach(function(genome) {
+		genome.nodes.forEach(function(node) {
+			switch(node.type) {
+				case 'input':
+					node.squash = neataptic.methods.activation.IDENTITY;
+					break;
+				case 'output':
+					node.squash = neataptic.methods.activation.IDENTITY;
+					break;
+			}
+		});
+		genome.connections.forEach(function(connection) {
+			connection.weight = Math.random() * 2 - 1;
+		});
+	});
+
+	for (var i = 0; i < 300; ++i) {
+		this.network.mutate();
+	}
 
 	this.runNeat = function(inputs) {
 		return this.network.population[currGenomeIndex].activate(inputs);
@@ -246,6 +262,7 @@ var controller = function() {
 		e.metaKey = false;
 		e.bubbles = true;
 		document.dispatchEvent(e);
+		// console.log('SEND', keyCode, event);
 	};
 
 	this.pressFor = function(key, delay) {
@@ -452,19 +469,19 @@ $(document).ready(function() {
 
 		var networkOutputs = ctrl.runNeat(networkInputs);
 
-		if (networkOutputs[0] > .5 && networkOutputs[1] < .5) {
+		if (networkOutputs[0] < 0 && networkOutputs[1] > 0) {
 			ctrl.press('LEFT');
 		} else {
 			ctrl.release('LEFT');
 		}
 
-		if (networkOutputs[1] > .5 && networkOutputs[0] < .5) {
+		if (networkOutputs[1] < 0 && networkOutputs[0] > 0) {
 			ctrl.press('RIGHT');
 		} else {
 			ctrl.release('RIGHT');
 		}
 
-		if (networkOutputs[2] > .5) {
+		if (networkOutputs[2] < 0) {
 			ctrl.press('SPACE');
 		} else {
 			ctrl.release('SPACE');
