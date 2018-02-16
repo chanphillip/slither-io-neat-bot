@@ -148,9 +148,10 @@ var controller = function() {
 		if (hasPenalty) {
 			score -= NETWORK_GAMEOVER_PENALTY;
 		}
-		console.log('  Ended Genome '+currGenomeIndex+':', score);
+		var scoreBonus = score * this.getScore() / 100;
+		console.log('  Ended Genome '+currGenomeIndex+':', score, scoreBonus);
 
-		this.network.population[currGenomeIndex].score = score;
+		this.network.population[currGenomeIndex].score = scoreBonus;
 
 		++currGenomeIndex;
 		if (currGenomeIndex >= NETWORK_GENOME_AMOUNT) {
