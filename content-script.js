@@ -6,6 +6,7 @@ function injectScript(file, node) {
     th.appendChild(s);
 }
 injectScript(chrome.extension.getURL('jquery.js'), 'head');
+injectScript(chrome.extension.getURL('neat-trained.js'), 'head');
 injectScript(chrome.extension.getURL('neataptic.js'), 'head');
 setTimeout(function() {
 	injectScript(chrome.extension.getURL('bot.js'), 'head');

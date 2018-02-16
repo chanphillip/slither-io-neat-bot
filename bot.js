@@ -225,28 +225,37 @@ var controller = function() {
 		}
 	);
 
-	this.network.population.forEach(function(genome) {
-		genome.nodes.forEach(function(node) {
-			switch(node.type) {
-				case 'input':
-					node.squash = neataptic.methods.activation.IDENTITY;
-					break;
-				case 'output':
-					node.squash = neataptic.methods.activation.BIPOLAR_SIGMOID;
-					break;
-			}
+	if (neatTrained) {
+		this.network.import(neatTrained);
+		console.log("Trained network loaded!");
+	} else {
+		this.network.population.forEach(function(genome) {
+			genome.nodes.forEach(function(node) {
+				switch(node.type) {
+					case 'input':
+						node.squash = neataptic.methods.activation.IDENTITY;
+						break;
+					case 'output':
+						node.squash = neataptic.methods.activation.BIPOLAR_SIGMOID;
+						break;
+				}
+			});
+			genome.connections.forEach(function(connection) {
+				connection.weight = Math.random() * 2 - 1;
+			});
 		});
-		genome.connections.forEach(function(connection) {
-			connection.weight = Math.random() * 2 - 1;
-		});
-	});
 
-	for (var i = 0; i < 300; ++i) {
-		this.network.mutate();
+		for (var i = 0; i < 300; ++i) {
+			this.network.mutate();
+		}
 	}
 
 	this.runNeat = function(inputs) {
 		return this.network.population[currGenomeIndex].activate(inputs);
+	};
+
+	this.export = function() {
+		window.open().document.write(JSON.stringify(this.network.export()));
 	};
 
 	// handle input for the game
