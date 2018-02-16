@@ -37,12 +37,23 @@ var canvas = function() {
 		left: 0,
 		zIndex: 10000000,
 		width: '300px',
-		height: '400px',
+		height: '200px',
 		background: 'rgba(255, 255, 255, .75)',
 		padding: '8px',
 		fontSize: '12px',
 		lineHeight: 1.5
 	}).appendTo('body');
+
+	// container for displaying graph
+	var $graph = $('<div>').css({
+		position: 'absolute',
+		bottom: 0,
+		left: 0,
+		zIndex: 10000000,
+		width: '500px',
+		height: '350px',
+		background: 'rgba(100, 100, 100, .75)',
+	}).html('<svg class="neat-best" style="width: 100%; height: 100%"></svg>').appendTo('body');
 
 	// watching variables
 	this.listenTo = function(expression, func) {
@@ -129,6 +140,9 @@ var controller = function() {
 			startingScore = self.getScore();
 			console.log('  Start Genome '+currGenomeIndex+'...');
 
+			// Draw the best genome
+			drawGraph(self.network.population[currGenomeIndex].graph($('.neat-best').width()/2, $('.neat-best').height()/2), '.neat-best');
+
 			genomeTimeout = setTimeout(function() {
 				self.endGenome();
 			}, NETWORK_GENOME_TIMEOUT);
@@ -176,9 +190,6 @@ var controller = function() {
 
 		// Sort the population by score
 		this.network.sort();
-
-		// Draw the best genome
-		// drawGraph(neat.population[0].graph($('.best').width()/2, $('.best').height()/2), '.best');
 
 		// Init new pop
 		var newPopulation = [];
