@@ -234,7 +234,7 @@ var controller = function() {
 					node.squash = neataptic.methods.activation.IDENTITY;
 					break;
 				case 'output':
-					node.squash = neataptic.methods.activation.IDENTITY;
+					node.squash = neataptic.methods.activation.BIPOLAR_SIGMOID;
 					break;
 			}
 		});
