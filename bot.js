@@ -469,19 +469,19 @@ $(document).ready(function() {
 
 		var networkOutputs = ctrl.runNeat(networkInputs);
 
-		if (networkOutputs[0] < 0 && networkOutputs[1] > 0) {
+		if (networkOutputs[0] > 0 && networkOutputs[1] < 0) {
 			ctrl.press('LEFT');
 		} else {
 			ctrl.release('LEFT');
 		}
 
-		if (networkOutputs[1] < 0 && networkOutputs[0] > 0) {
+		if (networkOutputs[1] > 0 && networkOutputs[0] < 0) {
 			ctrl.press('RIGHT');
 		} else {
 			ctrl.release('RIGHT');
 		}
 
-		if (networkOutputs[2] < 0) {
+		if (networkOutputs[2] > 0 && ctrl.getScore() >= 15) {
 			ctrl.press('SPACE');
 		} else {
 			ctrl.release('SPACE');
