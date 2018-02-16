@@ -493,10 +493,14 @@ $(document).ready(function() {
 	}, 40);
 
 	can.listenTo('//inputs', function() {
-		return lastInputs.join(', ');
+		return lastInputs.map(function(v) {
+			return v.toFixed(4);
+		}).join(', ');
 	});
 	can.listenTo('//outputs', function() {
-		return lastOutputs.join(', ');
+		return lastOutputs.map(function(v) {
+			return v.toFixed(4);
+		}).join(', ');
 	});
 });
 
