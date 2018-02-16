@@ -225,7 +225,7 @@ var controller = function() {
 		}
 	);
 
-	if (neatTrained) {
+	if (typeof neatTrained != 'undefined') {
 		this.network.import(neatTrained);
 		console.log("Trained network loaded!");
 	} else {
