@@ -92,10 +92,10 @@ var controller = function() {
 
 	var gameState = 'ENDED';
 	var checkGameState = setInterval(function() {
-		if (gameState == 'PLAYING' && !snake) {
+		if (gameState == 'PLAYING' && (!snake || snake.dead)) {
 			gameState = 'ENDED';
 			self.endGenome(true);
-		} else if (gameState == 'ENDED' && snake) {
+		} else if (gameState == 'ENDED' && (snake && !snake.dead)) {
 			gameState = 'PLAYING';
 
 			self.release('LEFT');
@@ -433,7 +433,7 @@ $(document).ready(function() {
 
 		can.clearLines();
 
-		if (!snake) {
+		if (!snake || snake.dead) {
 			return;
 		}
 
