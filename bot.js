@@ -96,7 +96,7 @@ var controller = function() {
 	this.getScore = function() {
 		var $elem = $('div.nsi:contains("Your length") > span:first');
 		if (!$elem.length) {
-			return null;
+			return 10;
 		}
 		return parseInt($elem.text().match(/\d+$/)[0]);
 	};
@@ -158,7 +158,7 @@ var controller = function() {
 		clearTimeout(genomeTimeout);
 		genomeTimeout = null;
 
-		var score = (this.getScore() || 0) - startingScore;
+		var score = this.getScore() - startingScore;
 		if (hasPenalty) {
 			score -= NETWORK_GAMEOVER_PENALTY;
 		}
