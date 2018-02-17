@@ -93,6 +93,8 @@ var canvas = function() {
 var controller = function() {
 	var self = this;
 
+	var startingScore;
+
 	this.getScore = function() {
 		var $elem = $('div.nsi:contains("Your length") > span:first');
 		if (!$elem.length) {
@@ -100,6 +102,11 @@ var controller = function() {
 		}
 		return parseInt($elem.text().match(/\d+$/)[0]);
 	};
+
+	this.getFitness = function() {
+		var score = this.getScore() - startingScore;
+		return Math.round(score * Math.sqrt(this.getScore()));
+	}
 
 	var gameState = 'ENDED';
 	var checkGameState = setInterval(function() {
@@ -131,13 +138,13 @@ var controller = function() {
 
 	var genomeTimeout = null;
 
-	var startingScore;
 	this.startGenome = function() {
 		var itvTmp = setInterval(function() {
 			if (gameState != 'PLAYING') return;
 			clearInterval(itvTmp);
-
-			startingScore = self.getScore();
+			setTimeout(function() {
+				startingScore = self.getScore();
+			}, 1000);
 			console.log('  Start Genome '+currGenomeIndex+'...');
 
 			// Draw the best genome
@@ -158,12 +165,11 @@ var controller = function() {
 		clearTimeout(genomeTimeout);
 		genomeTimeout = null;
 
-		var score = this.getScore() - startingScore;
+		var score = this.getFitness();
 		if (hasPenalty) {
 			score -= NETWORK_GAMEOVER_PENALTY;
 		}
-		var scoreBonus = score * Math.sqrt(this.getScore());
-		console.log('  Ended Genome '+currGenomeIndex+':', score, scoreBonus);
+		console.log('  Ended Genome '+currGenomeIndex+':', score);
 
 		this.network.population[currGenomeIndex].score = scoreBonus;
 
@@ -518,6 +524,9 @@ $(document).ready(function() {
 		return lastOutputs.map(function(v) {
 			return v.toFixed(4);
 		}).join(', ');
+	});
+	can.listenTo('//fitness', function() {
+		return ctrl.getFitness();
 	});
 });
 
