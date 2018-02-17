@@ -239,6 +239,9 @@ var controller = function() {
 
 	if (typeof neatTrained != 'undefined') {
 		this.network.import(neatTrained);
+		if (typeof neatTrainedGeneration != 'undefined') {
+			this.network.generation = neatTrainedGeneration;
+		}
 		console.log("Trained network loaded!");
 	} else {
 		this.network.population.forEach(function(genome) {
