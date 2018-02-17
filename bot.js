@@ -122,16 +122,11 @@ var controller = function() {
 		}
 	}, 100);
 
-	var iteration = 0;
-	var highestScore = 0;
-
-	var currGenomeIndex = 0;
+	this.currGenomeIndex = 0;
 
 	this.startGeneration = function() {
 		console.log('-------------');
 		console.log('Start Generation '+this.network.generation+'...');
-
-		highestScore = 0;
 
 		this.startGenome();
 	}
@@ -145,10 +140,10 @@ var controller = function() {
 			setTimeout(function() {
 				startingScore = self.getScore();
 			}, 1000);
-			console.log('  Start Genome '+currGenomeIndex+'...');
+			console.log('  Start Genome '+self.currGenomeIndex+'...');
 
 			// Draw the best genome
-			drawGraph(self.network.population[currGenomeIndex].graph($('.neat-best').width()/2, $('.neat-best').height()/2), '.neat-best');
+			drawGraph(self.network.population[self.currGenomeIndex].graph($('.neat-best').width()/2, $('.neat-best').height()/2), '.neat-best');
 
 			genomeTimeout = setTimeout(function() {
 				self.endGenome();
@@ -169,13 +164,13 @@ var controller = function() {
 		if (hasPenalty) {
 			score -= NETWORK_GAMEOVER_PENALTY;
 		}
-		console.log('  Ended Genome '+currGenomeIndex+':', score);
+		console.log('  Ended Genome '+this.currGenomeIndex+':', score);
 
-		this.network.population[currGenomeIndex].score = scoreBonus;
+		this.network.population[this.currGenomeIndex].score = scoreBonus;
 
-		++currGenomeIndex;
-		if (currGenomeIndex >= NETWORK_GENOME_AMOUNT) {
-			currGenomeIndex = 0;
+		++this.currGenomeIndex;
+		if (this.currGenomeIndex >= NETWORK_GENOME_AMOUNT) {
+			this.currGenomeIndex = 0;
 
 			this.endGeneration();
 		} else {
@@ -268,7 +263,7 @@ var controller = function() {
 	}
 
 	this.runNeat = function(inputs) {
-		return this.network.population[currGenomeIndex].activate(inputs);
+		return this.network.population[this.currGenomeIndex].activate(inputs);
 	};
 
 	this.export = function() {
@@ -515,6 +510,9 @@ $(document).ready(function() {
 
 	}, 40);
 
+	can.listenTo('//genome', function() {
+		return 'Gen '+ctrl.network.generation+' Genome '+ctrl.currGenomeIndex;
+	});
 	can.listenTo('//inputs', function() {
 		return lastInputs.map(function(v) {
 			return v.toFixed(4);
