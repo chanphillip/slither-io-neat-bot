@@ -133,13 +133,16 @@ var controller = function() {
 
 	var genomeTimeout = null;
 
-	this.startGenome = function() {
+	this.startGenome = function(justDied) {
 		var itvTmp = setInterval(function() {
 			if (gameState != 'PLAYING') return;
 			clearInterval(itvTmp);
-			setTimeout(function() {
+
+			if (justDied) {
+				startingScore = 10;
+			} else {
 				startingScore = self.getScore();
-			}, 1000);
+			}
 			console.log('  Start Genome '+self.currGenomeIndex+'...');
 
 			// Draw the best genome
@@ -151,7 +154,7 @@ var controller = function() {
 		}, 100);
 	};
 
-	this.endGenome = function(hasPenalty) {
+	this.endGenome = function(justDied) {
 
 		if (!genomeTimeout) {
 			return;
@@ -161,7 +164,7 @@ var controller = function() {
 		genomeTimeout = null;
 
 		var score = this.getFitness();
-		if (hasPenalty) {
+		if (justDied) {
 			score -= NETWORK_GAMEOVER_PENALTY;
 		}
 		console.log('  Ended Genome '+this.currGenomeIndex+':', score);
@@ -174,7 +177,7 @@ var controller = function() {
 
 			this.endGeneration();
 		} else {
-			this.startGenome();
+			this.startGenome(justDied);
 		}
 	};
 
