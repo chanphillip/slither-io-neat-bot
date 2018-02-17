@@ -166,7 +166,7 @@ var controller = function() {
 		}
 		console.log('  Ended Genome '+this.currGenomeIndex+':', score);
 
-		this.network.population[this.currGenomeIndex].score = scoreBonus;
+		this.network.population[this.currGenomeIndex].score = score;
 
 		++this.currGenomeIndex;
 		if (this.currGenomeIndex >= NETWORK_GENOME_AMOUNT) {
