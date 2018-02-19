@@ -226,7 +226,7 @@ var controller = function() {
 				neataptic.methods.mutation.SUB_CONN,
 				neataptic.methods.mutation.MOD_WEIGHT,
 				neataptic.methods.mutation.MOD_BIAS,
-				// neataptic.methods.mutation.MOD_ACTIVATION,
+				neataptic.methods.mutation.MOD_ACTIVATION,
 				neataptic.methods.mutation.ADD_GATE,
 				neataptic.methods.mutation.SUB_GATE,
 				neataptic.methods.mutation.ADD_SELF_CONN,
