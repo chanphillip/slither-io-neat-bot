@@ -10,5 +10,5 @@
       "run_at": "document_end"
     }
   ],
-  "web_accessible_resources" : ["jquery.js", "neataptic.js", "bot.js", "neat-trained.js", "d3.v3.min.js", "cola.v3.min.js", "graph.js", "graph.css"]
+  "web_accessible_resources" : ["jquery.js", "neataptic.js", "bot.js", "d3.v3.min.js", "cola.v3.min.js", "graph.js", "graph.css"]
 }

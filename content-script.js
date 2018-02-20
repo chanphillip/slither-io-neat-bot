@@ -9,7 +9,6 @@ injectScript(chrome.extension.getURL('jquery.js'), 'head');
 injectScript(chrome.extension.getURL('d3.v3.min.js'), 'head');
 injectScript(chrome.extension.getURL('cola.v3.min.js'), 'head');
 injectScript(chrome.extension.getURL('graph.js'), 'head');
-injectScript(chrome.extension.getURL('neat-trained.js'), 'head');
 injectScript(chrome.extension.getURL('neataptic.js'), 'head');
 setTimeout(function() {
 	injectScript(chrome.extension.getURL('bot.js'), 'head');

@@ -213,6 +213,10 @@ var controller = function() {
 
 		this.network.generation++;
 		this.startGeneration();
+
+		// store new generation to localStorage
+		localStorage.setItem('neatTrainedNetworks', JSON.stringify(this.network.export()));
+		localStorage.setItem('neatTrainedGeneration', this.network.generation);
 	}
 
 	this.network = new neataptic.Neat(
@@ -240,11 +244,15 @@ var controller = function() {
 		}
 	);
 
-	if (typeof neatTrained != 'undefined') {
-		this.network.import(neatTrained);
-		if (typeof neatTrainedGeneration != 'undefined') {
-			this.network.generation = neatTrainedGeneration;
-		}
+	// load from localStorage
+	var neatTrainedNetworks = localStorage.getItem('neatTrainedNetworks');
+	var neatTrainedGeneration = localStorage.getItem('neatTrainedGeneration');
+
+	if (neatTrainedNetworks) {
+
+		this.network.import(JSON.parse(neatTrainedNetworks));
+		this.network.generation = parseInt(neatTrainedGeneration) || 0;
+
 		console.log("Trained network loaded!");
 	} else {
 		this.network.population.forEach(function(genome) {
@@ -263,9 +271,7 @@ var controller = function() {
 			});
 		});
 
-		for (var i = 0; i < 300; ++i) {
-			this.network.mutate();
-		}
+		this.network.mutate();
 	}
 
 	this.runNeat = function(inputs) {
