@@ -9,7 +9,7 @@ var NETWORK_GENOME_AMOUNT = 30;
 var NETWORK_MUTATION_RATE = .3;
 var NETWORK_ELITISM = Math.round(.1 * NETWORK_GENOME_AMOUNT);
 
-var NETWORK_GENOME_TIMEOUT = 30000;		// 10 seconds for each genome
+var NETWORK_GENOME_TIMEOUT = 60000;		// 60 seconds for each genome
 var NETWORK_GAMEOVER_PENALTY = 0;
 
 var canvas = function() {
