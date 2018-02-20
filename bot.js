@@ -163,13 +163,16 @@ var controller = function() {
 		clearTimeout(genomeTimeout);
 		genomeTimeout = null;
 
-		var score = this.getFitness();
-		if (justDied) {
-			score -= NETWORK_GAMEOVER_PENALTY;
-		}
-		console.log('  Ended Genome '+this.currGenomeIndex+':', score);
+		// store highest score
+		this.updateBests();
 
-		this.network.population[this.currGenomeIndex].score = score;
+		var fitness = this.getFitness();
+		if (justDied) {
+			fitness -= NETWORK_GAMEOVER_PENALTY;
+		}
+		console.log('  Ended Genome '+this.currGenomeIndex+':', fitness);
+
+		this.network.population[this.currGenomeIndex].score = fitness;
 
 		++this.currGenomeIndex;
 		if (this.currGenomeIndex >= NETWORK_GENOME_AMOUNT) {
@@ -280,6 +283,28 @@ var controller = function() {
 
 	this.export = function() {
 		window.open().document.write(JSON.stringify(this.network.export()));
+	};
+
+	this.updateBests = function() {
+		var storedScores = [];
+		if (localStorage.getItem('neatTrainedBests')) {
+			storedScores = JSON.parse(localStorage.getItem('neatTrainedBests'));
+		}
+
+		storedScores.push({
+			generation: this.network.generation,
+			genome: this.currGenomeIndex,
+			fitness: this.getFitness(),
+			score: this.getScore()
+		});
+
+		storedScores.sort(function(a, b) {
+			return b.fitness - a.fitness;
+		});
+
+		storedScores.splice(30);		// only top 30
+
+		localStorage.setItem('neatTrainedBests', JSON.stringify(storedScores));
 	};
 
 	// handle input for the game
