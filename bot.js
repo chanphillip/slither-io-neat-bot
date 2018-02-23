@@ -545,7 +545,7 @@ $(document).ready(function() {
 		lastInputs = networkInputs.slice();
 		lastOutputs = networkOutputs.slice();
 
-	}, 40);
+	}, 20);
 
 	can.listenTo('//genome', function() {
 		return 'Gen '+ctrl.network.generation+' Genome '+ctrl.currGenomeIndex;
